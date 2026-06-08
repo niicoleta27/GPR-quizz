@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz — Gestiunea și Planificarea Rețelelor</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap');
+
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2235;
+    --accent: #00e5ff;
+    --accent2: #7c3aed;
+    --accent3: #f59e0b;
+    --correct: #10b981;
+    --wrong: #ef4444;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --border: #1e293b;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Header */
+  .header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+    padding-top: 1rem;
+  }
+
+  .header .tag {
+    display: inline-block;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    padding: 0.25rem 0.75rem;
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+  }
+
+  .header h1 {
+    font-size: 2rem;
+    font-weight: 800;
+    line-height: 1.15;
+    background: linear-gradient(135deg, #e2e8f0 0%, var(--accent) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.5rem;
+  }
+
+  .header p {
+    color: var(--muted);
+    font-size: 0.9rem;
+    font-family: 'Space Mono', monospace;
+  }
+
+  /* Progress bar */
+  .progress-wrap {
+    margin-bottom: 2rem;
+  }
+
+  .progress-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+  }
+
+  .progress-meta span {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  .progress-meta .q-num {
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  .progress-bar-bg {
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent2), var(--accent));
+    border-radius: 2px;
+    transition: width 0.5s cubic-bezier(.4,0,.2,1);
+  }
+
+  /* Theme badge */
+  .theme-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    padding: 0.3rem 0.7rem;
+    border-radius: 3px;
+    margin-bottom: 1.2rem;
+    text-transform: uppercase;
+  }
+
+  .theme-badge.t1 { background: rgba(124,58,237,0.15); color: #a78bfa; border: 1px solid rgba(124,58,237,0.3); }
+  .theme-badge.t2 { background: rgba(0,229,255,0.1); color: var(--accent); border: 1px solid rgba(0,229,255,0.25); }
+  .theme-badge.t3 { background: rgba(245,158,11,0.1); color: var(--accent3); border: 1px solid rgba(245,158,11,0.25); }
+  .theme-badge.t4 { background: rgba(16,185,129,0.1); color: #34d399; border: 1px solid rgba(16,185,129,0.25); }
+  .theme-badge.t5 { background: rgba(239,68,68,0.1); color: #f87171; border: 1px solid rgba(239,68,68,0.25); }
+  .theme-badge.t6 { background: rgba(99,102,241,0.1); color: #818cf8; border: 1px solid rgba(99,102,241,0.25); }
+
+  /* Question card */
+  .question-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 2rem;
+    margin-bottom: 1.25rem;
+    animation: fadeUp 0.35s ease forwards;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .question-text {
+    font-size: 1.1rem;
+    font-weight: 600;
+    line-height: 1.55;
+    margin-bottom: 1.5rem;
+    color: #f1f5f9;
+  }
+
+  /* Options */
+  .options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+  }
+
+  .option {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.85rem;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.85rem 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: left;
+    width: 100%;
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-size: 0.93rem;
+    line-height: 1.5;
+  }
+
+  .option:hover:not(:disabled) {
+    border-color: var(--accent);
+    background: rgba(0,229,255,0.05);
+    transform: translateX(4px);
+  }
+
+  .option-letter {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--muted);
+    min-width: 1.4rem;
+    padding-top: 0.05rem;
+    transition: color 0.2s;
+  }
+
+  .option.selected {
+    border-color: var(--accent);
+    background: rgba(0,229,255,0.08);
+  }
+
+  .option.selected .option-letter { color: var(--accent); }
+
+  .option.correct {
+    border-color: var(--correct);
+    background: rgba(16,185,129,0.1);
+  }
+
+  .option.correct .option-letter { color: var(--correct); }
+
+  .option.wrong {
+    border-color: var(--wrong);
+    background: rgba(239,68,68,0.1);
+  }
+
+  .option.wrong .option-letter { color: var(--wrong); }
+
+  .option:disabled { cursor: default; transform: none; }
+
+  /* Feedback */
+  .feedback {
+    margin-top: 1.25rem;
+    padding: 1rem 1.2rem;
+    border-radius: 6px;
+    font-size: 0.88rem;
+    line-height: 1.6;
+    display: none;
+    animation: fadeIn 0.3s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; } to { opacity: 1; }
+  }
+
+  .feedback.show { display: block; }
+
+  .feedback.correct-fb {
+    background: rgba(16,185,129,0.1);
+    border: 1px solid rgba(16,185,129,0.3);
+    color: #6ee7b7;
+  }
+
+  .feedback.wrong-fb {
+    background: rgba(239,68,68,0.08);
+    border: 1px solid rgba(239,68,68,0.25);
+    color: #fca5a5;
+  }
+
+  .feedback strong {
+    display: block;
+    font-size: 0.8rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin-bottom: 0.35rem;
+    font-family: 'Space Mono', monospace;
+  }
+
+  /* Buttons */
+  .btn-next {
+    display: none;
+    margin-top: 1.25rem;
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    border-radius: 5px;
+    padding: 0.75rem 1.75rem;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.2s;
+  }
+
+  .btn-next:hover { background: #00c8e0; transform: translateY(-1px); }
+  .btn-next.show { display: inline-block; }
+
+  /* Score screen */
+  .score-screen {
+    display: none;
+    text-align: center;
+    animation: fadeUp 0.5s ease forwards;
+  }
+
+  .score-screen.show { display: block; }
+
+  .score-circle {
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    margin: 0 auto 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid var(--accent);
+    background: rgba(0,229,255,0.05);
+    position: relative;
+  }
+
+  .score-circle::before {
+    content: '';
+    position: absolute;
+    inset: -8px;
+    border-radius: 50%;
+    border: 1px solid rgba(0,229,255,0.15);
+  }
+
+  .score-num {
+    font-size: 2.8rem;
+    font-weight: 800;
+    color: var(--accent);
+    line-height: 1;
+  }
+
+  .score-total {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin-top: 0.2rem;
+  }
+
+  .score-screen h2 {
+    font-size: 1.6rem;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+  }
+
+  .score-screen p {
+    color: var(--muted);
+    font-size: 0.9rem;
+    margin-bottom: 2rem;
+    font-family: 'Space Mono', monospace;
+  }
+
+  /* Per-theme score */
+  .theme-scores {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+    text-align: left;
+  }
+
+  .theme-score-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.85rem 1rem;
+  }
+
+  .theme-score-item .ts-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 0.4rem;
+  }
+
+  .theme-score-item .ts-val {
+    font-size: 1.1rem;
+    font-weight: 700;
+  }
+
+  .ts-bar {
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    margin-top: 0.4rem;
+    overflow: hidden;
+  }
+
+  .ts-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.8s cubic-bezier(.4,0,.2,1);
+  }
+
+  .btn-restart {
+    background: transparent;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    border-radius: 5px;
+    padding: 0.75rem 2rem;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.2s;
+  }
+
+  .btn-restart:hover {
+    background: rgba(0,229,255,0.1);
+  }
+
+  /* Quiz wrapper visibility */
+  #quiz-wrapper { display: block; }
+  #quiz-wrapper.hide { display: none; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <div class="tag">GPR · Quiz Final</div>
+    <h1>Gestiunea și Planificarea Rețelelor</h1>
+    <p id="quiz-subtitle">· 6 teme · testează-ți cunoștințele</p>
+  </div>
+
+  <div id="quiz-wrapper">
+    <div class="progress-wrap">
+      <div class="progress-meta">
+        <span>Întrebarea <span class="q-num" id="q-counter">1</span> din <span id="q-total">24</span></span>
+        <span id="score-live">✓ 0 corecte</span>
+      </div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="prog-bar" style="width:4.16%"></div>
+      </div>
+    </div>
+
+    <div id="question-area"></div>
+
+    <button class="btn-next" id="btn-next">Următoarea întrebare →</button>
+  </div>
+
+  <div class="score-screen" id="score-screen">
+    <div class="score-circle">
+      <div class="score-num" id="final-score">0</div>
+      <div class="score-total">din <span id="score-denom">24</span></div>
+    </div>
+    <h2 id="score-title">—</h2>
+    <p id="score-msg">—</p>
+    <div class="theme-scores" id="theme-scores-grid"></div>
+    <button class="btn-restart" onclick="restartQuiz()">↺ Încearcă din nou</button>
+  </div>
+
+</div>
+
+<script>
+const QUESTIONS = [
+  // ── TEMA 1 ──────────────────────────────────────────────
+  {
+    theme: "Tema 1", themeClass: "t1",
+    q: "Ce acronim descrie cele 5 arii funcționale de gestiune a rețelelor definite de OSI?",
+    options: ["SNMPS","FCAPS","MTBF","NMS"],
+    correct: 1,
+    explanation: "FCAPS = Faults (Defecțiuni), Configuration (Configurare), Accounting (Costuri), Performance (Performanță), Security (Securitate). Acesta este standardul acceptat universal."
+  },
+  {
+    theme: "Tema 1", themeClass: "t1",
+    q: "Care este ordinea corectă a pașilor de gestionare a defecțiunilor (Gestión de Fallos)?",
+    options: [
+      "Repară → Izolează → Determină → Reconfigurează → Documentează",
+      "Documentează → Determină → Izolează → Repară → Reconfigurează",
+      "Determină → Izolează → Reconfigurează → Repară → Documentează",
+      "Izolează → Determină → Repară → Reconfigurează → Documentează"
+    ],
+    correct: 2,
+    explanation: "Ordinea corectă: Determinar el fallo → Aislar → Reconfigurar → Reparar/Sustituir → Documentar. Documentarea este ÎNTOTDEAUNA ultimul pas."
+  },
+  {
+    theme: "Tema 1", themeClass: "t1",
+    q: "Care este diferența dintre un 'fallo' și un 'error' în gestiunea rețelelor?",
+    options: [
+      "Nu există diferență, sunt sinonime",
+      "Un error este mai grav decât un fallo",
+      "Un fallo necesită intervenție; erorile sunt normale și de obicei se autocorectează (ex: CRC)",
+      "Un fallo afectează hardware, un error afectează software"
+    ],
+    correct: 2,
+    explanation: "Erorile (errors) sunt normale și se autocorectează (ex: erori CRC). Defecțiunile (fallos) necesită intervenție activă — izolare, reconfigurare, reparare."
+  },
+  {
+    theme: "Tema 1", themeClass: "t1",
+    q: "Ce componentă a unui NMS există pe FIECARE nod al rețelei și colectează statistici locale?",
+    options: ["NMA (Network Management Application)","MIB (Management Information Base)","NME (Network Management Entity)","OID (Object Identifier)"],
+    correct: 2,
+    explanation: "NME (Network Management Entity) există pe fiecare nod/agent. NMA există doar pe nodul manager (gestor) și oferă interfața operatorului uman."
+  },
+  // ── TEMA 2 ──────────────────────────────────────────────
+  {
+    theme: "Tema 2", themeClass: "t2",
+    q: "Pe ce porturi UDP lucrează SNMP? (sondeo și TRAP)",
+    options: ["80 și 443","161 și 162","21 și 22","53 și 161"],
+    correct: 1,
+    explanation: "Port 161 = sondeo (polling, managerul întreabă agentul). Port 162 = TRAP (agentul anunță managerul dintr-un eveniment). Ambele folosesc UDP."
+  },
+  {
+    theme: "Tema 2", themeClass: "t2",
+    q: "Care versiune SNMP introduce autentificare și criptare reale?",
+    options: ["SNMPv1","SNMPv2c","SNMPv3","SNMPv4"],
+    correct: 2,
+    explanation: "SNMPv1 și SNMPv2c au securitate foarte limitată. SNMPv3 standardizează autentificarea și cifrarea — este singura versiune cu securitate adecvată pentru operatori."
+  },
+  {
+    theme: "Tema 2", themeClass: "t2",
+    q: "Care este diferența fundamentală dintre Polling și Event Reporting (TRAP)?",
+    options: [
+      "Polling folosește TCP, TRAP folosește UDP",
+      "Polling: managerul ia inițiativa; Event Reporting: agentul ia inițiativa",
+      "Polling este mai rapid decât Event Reporting",
+      "Nu există diferență funcțională"
+    ],
+    correct: 1,
+    explanation: "Polling = manager întreabă periodic agentul (interacțiune cerere/răspuns). Event Reporting = agentul anunță singur managerul când se întâmplă ceva relevant. Se folosesc împreună în practică."
+  },
+  {
+    theme: "Tema 2", themeClass: "t2",
+    q: "Care sunt cele 3 tipuri de informații ce pot fi monitorizate?",
+    options: [
+      "Statică, Dinamică, Statistică",
+      "Hardware, Software, Rețea",
+      "Locală, Remotă, Distribuită",
+      "Continuă, Discretă, Binară"
+    ],
+    correct: 0,
+    explanation: "Statică = configurația curentă (se schimbă rar). Dinamică = evenimente din rețea. Statistică = derivată din informația dinamică (ex: pachete/secundă). Toată monitorizarea se bazează pe aceste 3 tipuri."
+  },
+  {
+    theme: "Tema 2", themeClass: "t2",
+    q: "Ce problemă gravă poate apărea dacă toate dispozitivele din rețea trimit TRAP-uri simultan?",
+    options: [
+      "Managerul nu poate recepționa TRAP-uri multiple",
+      "TRAP-urile se pierd dacă depășesc 162 bytes",
+      "Avalanșa de TRAP-uri poate congestiona rețeaua și genera informații eronate",
+      "Nu există probleme — TRAP-urile au prioritate maximă"
+    ],
+    correct: 2,
+    explanation: "Exemplu clasic: pană de curent → toate dispozitivele trimit TRAP simultan → congestionează rețeaua → informații eronate la server. De aceea se combină polling-ul cu TRAP-urile cu prudență."
+  },
+  // ── TEMA 3 ──────────────────────────────────────────────
+  {
+    theme: "Tema 3", themeClass: "t3",
+    q: "Cum sunt reprezentate grafic Locurile (Lugares) și Tranzițiile (Transiciones) într-o Rețea Petri?",
+    options: [
+      "Locuri = dreptunghiuri, Tranziții = cercuri",
+      "Locuri = cercuri, Tranziții = bare verticale",
+      "Locuri = diamante, Tranziții = cercuri",
+      "Locuri = bare verticale, Tranziții = cercuri"
+    ],
+    correct: 1,
+    explanation: "Locuri (Lugares) = cercuri ● — pot conține mărci (puncte). Tranziții (Transiciones) = bare verticale ▬ — reprezintă evenimente. Arcele le conectează, dar NICIODATĂ loc↔loc sau tranziție↔tranziție."
+  },
+  {
+    theme: "Tema 3", themeClass: "t3",
+    q: "Pentru ca o tranziție să se franșeze, ce două condiții trebuie îndeplinite SIMULTAN?",
+    options: [
+      "Validată și Marcată",
+      "Sensibilizată și Activată",
+      "Sensibilizată ȘI Validată",
+      "Marcată și Liberă"
+    ],
+    correct: 2,
+    explanation: "Sensibilizată = toate locurile de origine au mărci. Validată = evenimentul asociat (funcția logică) este adevărat. Ambele trebuie să fie adevărate simultan pentru ca tranziția să se franșeze."
+  },
+  {
+    theme: "Tema 3", themeClass: "t3",
+    q: "Ce se întâmplă cu mărciule când o tranziție se franșează?",
+    options: [
+      "Mărciule din locurile de origine se dublează",
+      "Mărciule se șterg din locurile de origine și apar în locurile destinație",
+      "Mărciule rămân în locurile de origine și apar copii în destinație",
+      "Mărciule se redistribuie aleatoriu în toată rețeaua"
+    ],
+    correct: 1,
+    explanation: "La franșare: dispar mărciule din TOATE locurile de origine → apare câte o marcă în FIECARE loc destinație. Un loc poate acumula mai mult de o marcă."
+  },
+  {
+    theme: "Tema 3", themeClass: "t3",
+    q: "Ce înseamnă că o Rețea Petri este 'vie' (viva)?",
+    options: [
+      "Că are cel puțin o marcă în fiecare loc",
+      "Că nicio tranziție nu rămâne blocată permanent — rețeaua nu se blochează niciodată",
+      "Că toate locurile sunt 1-limitate",
+      "Că poate reveni la marcajul inițial M0"
+    ],
+    correct: 1,
+    explanation: "Vivacitate = conceptul de non-blocare. O tranziție este vie dacă există întotdeauna o secvență de franșări care permite franșarea ei. Dacă TOATE tranzițiile sunt vii → rețeaua este vie."
+  },
+  {
+    theme: "Tema 3", themeClass: "t3",
+    q: "Cum se calculează Matricea de Incidență C?",
+    options: [
+      "C = C⁻ + C⁺",
+      "C = C⁻ − C⁺",
+      "C = C⁺ − C⁻",
+      "C = C⁺ × C⁻"
+    ],
+    correct: 2,
+    explanation: "C = C⁺ − C⁻. C⁻ = matrice incidență prealabilă (intrările tranzițiilor). C⁺ = matrice incidență posterioară (ieșirile tranzițiilor). C reprezintă efectul NET al franșării."
+  },
+  {
+    theme: "Tema 3", themeClass: "t3",
+    q: "Ce înseamnă că o RdP este '1-limitată' sau 'binară'?",
+    options: [
+      "Are exact 1 tranziție și 1 loc",
+      "Niciun loc nu poate conține mai mult de 1 marcă — implementabilă cu bistabile",
+      "Poate fi parcursă într-un singur sens",
+      "Are un singur marcaj inițial posibil"
+    ],
+    correct: 1,
+    explanation: "O rețea k-limitată = niciun loc nu depășește k mărci în niciun marcaj accesibil. Rețelele 1-limitate (binare) pot fi implementate cu bistabile (flip-flops). Dacă rețeaua generează mai mărci decât permite limitarea → modelul e eronat."
+  },
+  // ── CONGESTIE ──────────────────────────────────────────────
+  {
+    theme: "Congestie", themeClass: "t4",
+    q: "Ce măsoară MTTR (Mean Time To Repair)?",
+    options: [
+      "Timpul mediu între două defecțiuni consecutive",
+      "Timpul mediu necesar pentru a repara o defecțiune",
+      "Rata medie de transfer a rețelei",
+      "Numărul mediu de retransmisii pe secundă"
+    ],
+    correct: 1,
+    explanation: "MTTR = timp mediu de reparare. MTBF = timp mediu între defecțiuni. MTBF îți spune care defecțiuni sunt cele mai frecvente; MTTR îți spune care sunt cele mai grave (durează mult de reparat)."
+  },
+  {
+    theme: "Congestie", themeClass: "t4",
+    q: "Care este diferența esențială dintre controlul de flux și controlul de congestie?",
+    options: [
+      "Nu există diferență, sunt același lucru",
+      "Controlul de flux protejează receptorul; controlul de congestie protejează rețeaua",
+      "Controlul de flux protejează rețeaua; controlul de congestie protejează receptorul",
+      "Controlul de flux se aplică la UDP; controlul de congestie la TCP"
+    ],
+    correct: 1,
+    explanation: "Control de flux = protejează RECEPTORUL (emițător rapid nu supraîncarcă un receptor lent). Control de congestie = protejează REȚEAUA (ansamblul de emițători nu supraîncarcă legăturile). Mecanismele sunt diferite și acționează la scări diferite."
+  },
+  {
+    theme: "Congestie", themeClass: "t4",
+    q: "Controlul de congestie în buclă închisă este REACTIV. Care sunt cele 3 faze ale sale?",
+    options: [
+      "Planificare → Implementare → Testare",
+      "Monitorizare → Reacție → Ajustare",
+      "Detecție → Izolare → Remediere",
+      "Alertă → Diagnostic → Documentare"
+    ],
+    correct: 1,
+    explanation: "Bucla închisă: (1) Monitorizare — supraveghezi parametrii (ocupare link-uri, discarduri, RTT, jitter); (2) Reacție — trimiți informații punctelor de acțiune; (3) Ajustare — reduci viteza, interzici conexiuni noi."
+  },
+  {
+    theme: "Congestie", themeClass: "t4",
+    q: "Ce înseamnă 'overprovisioning' ca soluție la congestie?",
+    options: [
+      "A reduce cererea de trafic prin QoS",
+      "A supradimensiona capacitatea rețelei pentru cel mai rău caz de trafic",
+      "A folosi protocoale de compresie mai eficiente",
+      "A ruta traficul prin mai multe căi simultan"
+    ],
+    correct: 1,
+    explanation: "Overprovisioning = crești capacitatea dincolo de necesar. Avantaje: lățimea de bandă e mai ieftină decât pierderea clienților, rețea mai ușor de controlat, pregătită pentru creștere. Internetul a evoluat de la un core congestionat la unul supradimensionat."
+  },
+  // ── PLAN CONTINGENȚĂ + IA ──────────────────────────────────
+  {
+    theme: "Contingență & IA", themeClass: "t5",
+    q: "Ce înseamnă RTO (Recovery Time Objective)?",
+    options: [
+      "Cantitatea maximă de date pe care ești dispus să o pierzi",
+      "Rata de transfer în timpul recuperării",
+      "Timpul maxim tolerat în care un sistem poate fi nefuncțional după un incident",
+      "Numărul de replicări necesare pentru redundanță"
+    ],
+    correct: 2,
+    explanation: "RTO = cât timp maxim poate fi sistemul oprit. RPO = câte date maxim poți pierde (măsurat în timp = frecvența backup-urilor). Exemplu: RTO email = 2h înseamnă că trebuie repus în funcțiune în maxim 2 ore."
+  },
+  {
+    theme: "Contingență & IA", themeClass: "t5",
+    q: "Care este ordinea corectă a ciclului de viață al unui Plan de Contingență?",
+    options: [
+      "Implementare → Testare → Analiză → Proiectare → Revizuire → Formare",
+      "Analiză → Proiectare → Implementare → Testare → Revizuire → Formare",
+      "Formare → Analiză → Proiectare → Testare → Implementare → Revizuire",
+      "Testare → Analiză → Proiectare → Implementare → Formare → Revizuire"
+    ],
+    correct: 1,
+    explanation: "Ordinea corectă: (1) Analiză și identificare riscuri → (2) Proiectarea planului → (3) Implementare → (4) Teste și simulacre → (5) Revizuire și îmbunătățire → (6) Mentenanță și formare. Este un ciclu continuu."
+  },
+  // ── IA ──────────────────────────────────────────────────────
+  {
+    theme: "IA în Rețele", themeClass: "t6",
+    q: "Care este fraza cheie din document despre rolul IA față de metodele clasice?",
+    options: [
+      "\"IA înlocuiește complet protocoalele clasice\"",
+      "\"IA elimină congestia definitiv\"",
+      "\"IA complementează, nu înlocuiește\"",
+      "\"IA este obligatorie în orice rețea modernă\""
+    ],
+    correct: 2,
+    explanation: "\"IA complementează, nu înlocuiește\" — marcată explicit în slide-uri. IA nu elimină congestia, nu înlocuiește protocoalele clasice. Scopul ei: înțelege comportamentul rețelei, automatizează decizii, anticipează probleme, optimizează resurse."
+  },
+  {
+    theme: "IA în Rețele", themeClass: "t6",
+    q: "Care este transformarea fundamentală pe care o aduce IA în controlul congestiei?",
+    options: [
+      "De la UDP la TCP în transmiterea datelor",
+      "De la model REACTIV (apare congestia → reacționezi) la model PREDICTIV (detectezi tipare → acționezi înainte)",
+      "De la gestiune centralizată la gestiune distribuită",
+      "De la SNMPv2 la SNMPv3"
+    ],
+    correct: 1,
+    explanation: "Controlul clasic reacționează DUPĂ ce apare congestia. IA încearcă să anticipeze, detectând tipare istorice și predicând congestia înainte să apară. Aceasta e marea transformare: Reactiv → Predictiv."
+  },
+  {
+    theme: "IA în Rețele", themeClass: "t6",
+    q: "Care dintre acestea este o limitare REALĂ a IA în gestiunea rețelelor menționată explicit în curs?",
+    options: [
+      "IA nu poate funcționa în rețele wireless",
+      "IA necesită minimum 1000 de dispozitive pentru a funcționa",
+      "Dacă telemetria este proastă, învățarea va fi incorectă (garbage in, garbage out)",
+      "IA nu poate detecta anomalii de securitate"
+    ],
+    correct: 2,
+    explanation: "Limitările reale menționate: telemetrie proastă → învățare incorectă; fals pozitive; explicabilitate dificilă; cost computațional ridicat; risc de instabilitate dacă automatizarea e greșită. Prima e cea mai fundamentală."
+  },
+  // ── TEMA 1 — întrebări noi ────────────────────────────────
+  {
+    theme: "Tema 1", themeClass: "t1",
+    q: "Care sunt cele 6 justificări principale pentru investiția în gestiunea rețelei?",
+    options: [
+      "Viteză, Cost, Securitate, Redundanță, Monitorizare, Automatizare",
+      "Control resurse strategice, Control complexitate, Serviciu mai bun, Echilibru nevoi, Reducere downtime, Control costuri",
+      "SNMP, MIB, NMS, NME, NMA, OID",
+      "Fallos, Costes, Configuración, Prestaciones, Seguridad, Planificación"
+    ],
+    correct: 1,
+    explanation: "Cele 6 justificări: (1) Control resurse strategice, (2) Control al complexității, (3) Serviciu mai bun, (4) Echilibru între nevoi diverse, (5) Reducerea timpilor de nefuncționare, (6) Control al costurilor. Toate sunt legate de valoarea strategică a rețelei."
+  },
+  {
+    theme: "Tema 1", themeClass: "t1",
+    q: "Ce este MIB (Management Information Base)?",
+    options: [
+      "Un protocol de comunicație între agenți și manageri",
+      "O bază de date structurată ierarhic (arbore) care definește variabilele și OID-urile unui dispozitiv de rețea",
+      "Un server central de gestiune a rețelei",
+      "Un tip de mesaj SNMP pentru notificări"
+    ],
+    correct: 1,
+    explanation: "MIB = baza de date structurată în formă de arbore ierarhic. Fiecare variabilă are un OID unic. MIB-ul local al unui agent conține info despre configurația și comportamentul nodului. Managerul îl consultă via SNMP."
+  },
+  {
+    theme: "Tema 1", themeClass: "t1",
+    q: "Care sunt avantajele gestiunii distribuite față de cea centralizată?",
+    options: [
+      "Mai puțin trafic de gestiune, scalabilitate mai bună, elimină single point of failure",
+      "Mai simplu de configurat, mai ieftin, mai rapid",
+      "Securitate mai bună, mai puține dispozitive necesare, interfață unificată",
+      "Nu există avantaje — gestiunea centralizată este întotdeauna preferabilă"
+    ],
+    correct: 0,
+    explanation: "Gestiunea distribuită: (1) Traficul de gestiune scade — nu tot merge spre un centru; (2) Scalabilitate — adaugi o stație nouă; (3) Elimini single point of failure — dacă pică una, altele preiau. Se păstrează totuși un control central cu backup."
+  },
+  {
+    theme: "Tema 1", themeClass: "t1",
+    q: "Ce este un OID și cum arată structura sa?",
+    options: [
+      "Un identificator text (ex: 'router.interface.status') pentru dispozitive",
+      "Un identificator numeric ierarhic (ex: 1.3.6.1.2.1.1.3.0) ce adresează o variabilă din MIB",
+      "Un cod de eroare returnat de agentul SNMP",
+      "Un tip de pachet UDP folosit de SNMP"
+    ],
+    correct: 1,
+    explanation: "OID (Object Identifier) = adresă numerică ierarhică în MIB, ca un arbore. Exemplu: 1.3.6.1.2.1.1.3.0 = sysUpTime (cât timp e pornit dispozitivul). Fiecare număr = un nivel în ierarhie. NMS folosește OID-uri pentru a interoga agenții SNMP."
+  },
+  {
+    theme: "Tema 1", themeClass: "t1",
+    q: "Ce arie funcțională OSI se ocupă cu generarea, distribuția și stocarea cheilor criptate și gestionarea parolelor?",
+    options: [
+      "Gestiunea Defecțiunilor (Faults)",
+      "Gestiunea Configurației (Configuration)",
+      "Gestiunea Costurilor (Accounting)",
+      "Gestiunea Securității (Security)"
+    ],
+    correct: 3,
+    explanation: "Gestiunea Securității (S din FCAPS): generare/distribuție chei criptate, parole și autorizații, monitorizarea accesului, logs de audit. Atenție: tehnologiile de securitate ≠ politicile de securitate — ambele sunt necesare."
+  },
+  // ── TEMA 2 — întrebări noi ────────────────────────────────
+  {
+    theme: "Tema 2", themeClass: "t2",
+    q: "Ce este o 'comunitate SNMP' și la ce servește?",
+    options: [
+      "Un grup de routere gestionate de același NMS",
+      "O relație între un agent și un set de manageri care definește autentificarea și controlul de acces",
+      "O versiune specială de SNMP pentru rețele mari",
+      "Un tip de mesaj pentru comunicarea între manageri"
+    ],
+    correct: 1,
+    explanation: "Comunitate SNMP = relația agent↔manageri cu autentificare și control de acces. Numele comunității se include în fiecare mesaj. 'public' = read-only (citire). 'private' = read-write (modificare). Dacă știi numele, poți gestiona agentul — de aceea SNMPv1/v2c au securitate slabă."
+  },
+  {
+    theme: "Tema 2", themeClass: "t2",
+    q: "Ce face operațiunea GetBulkRequest în SNMP?",
+    options: [
+      "Șterge mai multe variabile din MIB simultan",
+      "Cere mai mulți agenți simultan",
+      "Cere un bloc mare de date într-o singură cerere (disponibil din SNMPv2)",
+      "Trimite un TRAP bulk pentru mai multe evenimente"
+    ],
+    correct: 2,
+    explanation: "GetBulkRequest = metodă eficientă de a recupera cantități mari de date dintr-o singură cerere. Disponibil din SNMPv2. GetNextRequest parcurge MIB-ul unul câte unul (lexicografic); GetBulkRequest face același lucru mult mai eficient."
+  },
+  {
+    theme: "Tema 2", themeClass: "t2",
+    q: "Ce este 'profiling' în contextul monitorizării performanței?",
+    options: [
+      "Crearea profilurilor de utilizator în sistemul de gestiune",
+      "Statistici despre consumul de resurse al unui modul software — detectarea părților de optimizat",
+      "Monitorizarea traficului de rețea la nivel de pachete",
+      "Configurarea profilurilor de acces SNMP"
+    ],
+    correct: 1,
+    explanation: "Profiling = statistici despre ce resurse consumă fiecare parte a unui modul software. Ajută la detectarea zonelor care necesită optimizare. Se implementează cu contoare de performanță hardware. Tool-uri Linux: oprofile, perf."
+  },
+  {
+    theme: "Tema 2", themeClass: "t2",
+    q: "Care este diferența dintre NetFlow și SNMP?",
+    options: [
+      "NetFlow folosește UDP, SNMP folosește TCP",
+      "NetFlow operează la L3/L4 (analiză fluxuri de trafic); SNMP operează la L7 (gestiunea dispozitivelor)",
+      "NetFlow este mai vechi decât SNMP",
+      "Nu există diferențe semnificative între ele"
+    ],
+    correct: 1,
+    explanation: "SNMP (L7 Aplicație) = gestionează parametrii dispozitivelor (consultă/modifică MIB). NetFlow (L3/L4) = analizează fluxurile de trafic, nu capturează date la nivel de aplicație. Ambele monitorizează rețeaua și sunt suportate pe routere/switch-uri, dar în moduri diferite."
+  },
+  {
+    theme: "Tema 2", themeClass: "t2",
+    q: "Ce parametri se monitorizează tipic la un procesor în cadrul gestiunii performanței?",
+    options: [
+      "Temperatura, tensiunea, frecvența de ceas",
+      "Utilizarea CPU, lungimea cozii de procese gata, numărul de comutări de context și întreruperi",
+      "Numărul de nuclee active, memoria cache L1/L2/L3",
+      "Doar utilizarea totală (%) fără alte detalii"
+    ],
+    correct: 1,
+    explanation: "Parametri relevanți procesor: utilizarea CPU (distingând user vs sistem), lungimea cozii de procese ready (bun indicator al încărcării), nr. comutări context, nr. întreruperi, nr. procese create. Modul de eșantionare: instantaneu, agregat de la pornire, sau istoric (sar în Linux)."
+  },
+  // ── TEMA 3 — întrebări noi ────────────────────────────────
+  {
+    theme: "Tema 3", themeClass: "t3",
+    q: "Un arc într-o Rețea Petri poate lega:",
+    options: [
+      "Două locuri între ele",
+      "Două tranziții între ele",
+      "Întotdeauna un loc cu o tranziție (sau invers) — niciodată loc↔loc sau tranziție↔tranziție",
+      "Orice combinație de noduri"
+    ],
+    correct: 2,
+    explanation: "Regulă fundamentală: un arc leagă ÎNTOTDEAUNA loc↔tranziție sau tranziție↔loc. Niciodată loc↔loc sau tranziție↔tranziție. O tranziție poate fi destinație/origine a mai multor locuri, și invers."
+  },
+  {
+    theme: "Tema 3", themeClass: "t3",
+    q: "Ce reprezintă M0 în contextul unei Rețele Petri?",
+    options: [
+      "Matricea de incidență zero",
+      "Marcajul inițial — starea de pornire a rețelei, din care se deduce comportamentul sistemului",
+      "Numărul maxim de mărci permise",
+      "Prima tranziție care se franșează"
+    ],
+    correct: 1,
+    explanation: "M0 = marcajul inițial (distribuția inițială a mărcilor în locuri). Din M0 se deduce întreg comportamentul sistemului. [M0] = mulțimea tuturor marcajelor accesibile din M0. Reversibilitatea verifică dacă din orice marcaj accesibil se poate reveni la M0."
+  },
+  {
+    theme: "Tema 3", themeClass: "t3",
+    q: "Ce problemă fundamentală au 'autobibucle' (arce de intrare și ieșire spre același loc) în analiza matriceală?",
+    options: [
+      "Provoacă blocaje în rețea",
+      "Se anulează în matricea C (C⁺ și C⁻ se compensează), pierzând informații despre structura reală",
+      "Nu există autobibucle în Rețelele Petri",
+      "Fac imposibilă calcularea arborelui de accesibilitate"
+    ],
+    correct: 1,
+    explanation: "Limitare matriceală: autobibucla = arc de intrare + arc de ieșire spre același loc. În C⁺ și C⁻ apar în aceeași poziție și se anulează în C = C⁺ − C⁻. Deci C nu reflectă complet structura rețelei. Aceasta e una din limitările principale ale metodei matriceale."
+  },
+  {
+    theme: "Tema 3", themeClass: "t3",
+    q: "Ce poți determina analizând arborele de accesibilitate al unei RdP?",
+    options: [
+      "Doar dacă rețeaua este vie sau nu",
+      "Blocaje, tranziții inactive, locuri nesigure, stări absorbante, bucle infinite, finitudinea spațiului de stări",
+      "Doar matricele de incidență",
+      "Numai dacă rețeaua este reversibilă"
+    ],
+    correct: 1,
+    explanation: "Arborele de accesibilitate permite detectarea: blocaje, tranziții care nu se franșează niciodată, locuri nesigure, stări absorbante, bucle infinite, finitudinea spațiului de stări, absența conflictelor, verificarea specificațiilor. Dezavantaj: poate deveni enorm pentru sisteme complexe."
+  },
+  {
+    theme: "Tema 3", themeClass: "t3",
+    q: "Ce înseamnă că o RdP este 'reversibilă'?",
+    options: [
+      "Că tranzițiile pot fi parcurse în ambele direcții",
+      "Că din orice marcaj accesibil se poate reveni la marcajul inițial M0",
+      "Că numărul de mărci rămâne constant",
+      "Că fiecare loc are exact un arc de intrare și unul de ieșire"
+    ],
+    correct: 1,
+    explanation: "Reversibilitate = din orice marcaj accesibil există o secvență de franșări care duce înapoi la M0. Garantează că nu există 'stări finale absorbante' — stări din care nu mai poți ieși. Dacă există marcaje din care nu poți reveni la M0 → rețeaua NU este reversibilă."
+  },
+  // ── CONGESTIE — întrebări noi ────────────────────────────────
+  {
+    theme: "Congestie", themeClass: "t4",
+    q: "Congestia apare când:",
+    options: [
+      "Rețeaua are prea multe dispozitive conectate",
+      "Cererea de trafic depășește capacitatea disponibilă a rețelei",
+      "Protocolul SNMP trimite prea multe TRAP-uri",
+      "MTU (Maximum Transmission Unit) este prea mic"
+    ],
+    correct: 1,
+    explanation: "Congestia = cererea > capacitatea. Echipamentele pun excesul în coadă. Cozile funcționează bine doar dacă rămân în general la ocupare scăzută. Când se umplu → discarduri → pierderi de pachete → retransmisii → mai multă congestie (spirală)."
+  },
+  {
+    theme: "Congestie", themeClass: "t4",
+    q: "Ce semnale tipice indică congestia în feedback-ul implicit (detectat de capetele rețelei)?",
+    options: [
+      "Creșterea vitezei de transfer și scăderea RTT",
+      "Mesaje de eroare HTTP 500",
+      "Întârzieri (RTT crescut), pierderi de pachete, corupție",
+      "Creșterea numărului de conexiuni TCP active"
+    ],
+    correct: 2,
+    explanation: "Feedback implicit = ce detectează capetele fără informații explicite din rețea. Semnale: RTT crescut (cozi mari), pierderi (coadă plină, echipament defect), corupție (zgomot, atacuri). Atenție: același efect poate avea cauze multiple!"
+  },
+  {
+    theme: "Congestie", themeClass: "t4",
+    q: "Care este dezavantajul principal al re-rutării (re-enrutamiento) ca soluție la congestie?",
+    options: [
+      "Re-rutarea este imposibilă în rețelele TCP/IP",
+      "Routing mai complex, RTT-uri diferite pentru pachete din același flux, și noua rută se poate congestiona la rândul ei",
+      "Re-rutarea crește costurile de bandă",
+      "Nu există dezavantaje — re-rutarea este întotdeauna cea mai bună soluție"
+    ],
+    correct: 1,
+    explanation: "Dezavantaje re-rutare: (1) Routing mai complex; (2) Dacă e per-pachet → RTT-uri diferite pentru pachete din același flux → probleme de reordonare; (3) Noua rută se poate congestiona la rândul ei. Se dimensionează link-uri de mare capacitate pe baza evoluției cererii în timp."
+  },
+  // ── PLAN CONTINGENȚĂ — întrebări noi ────────────────────────────────
+  {
+    theme: "Contingență & IA", themeClass: "t5",
+    q: "Ce este RPO (Recovery Point Objective)?",
+    options: [
+      "Timpul maxim în care sistemul poate fi nefuncțional",
+      "Punctul maxim de pierdere de date acceptabil, măsurat în timp (dictează frecvența backup-urilor)",
+      "Rata de recuperare a pachetelor pierdute",
+      "Numărul maxim de dispozitive care pot pica simultan"
+    ],
+    correct: 1,
+    explanation: "RPO = câte date ești dispus să pierzi dacă survine un incident, exprimat în timp. Exemplu: RPO = 15 min → backup la fiecare 15 minute → maxim 15 min de date pierdute. RPO dictează direct frecvența backup-urilor. Diferit de RTO (timp maxim de indisponibilitate)."
+  },
+  {
+    theme: "Contingență & IA", themeClass: "t5",
+    q: "Care dintre acestea este o vulnerabilitate tipică menționată în analiza de riscuri pentru un plan de contingență?",
+    options: [
+      "Folosirea protocolului SNMPv3",
+      "Existența unui centru de backup geografic",
+      "Sisteme fără actualizări, parole slabe, lipsa backup-urilor automate, acces fizic necontrolat",
+      "Utilizarea firewall-urilor și ACL-urilor"
+    ],
+    correct: 2,
+    explanation: "Vulnerabilități tipice: sisteme fără patch-uri/actualizări, parole slabe, absența backup-urilor automate sau a planurilor de recuperare, acces fizic necontrolat. Acestea sunt punctele slabe pe care le exploatează atacatorii sau care agravează incidentele."
+  },
+  {
+    theme: "Contingență & IA", themeClass: "t5",
+    q: "Ce recomandă cursul în privința documentației în caz de incident major?",
+    options: [
+      "Documentația digitală în cloud este suficientă",
+      "Nu este necesară documentație dacă există personal experimentat",
+      "Să existe copii IMPRIMATE și actualizate ale hărții rețelei, configurațiilor critice și manualelor de urgență",
+      "Documentația se face doar după rezolvarea incidentului"
+    ],
+    correct: 2,
+    explanation: "Cursul recomandă explicit: copii IMPRIMATE și actualizate (plus digitale) ale: hărții logice și fizice a rețelei, configurațiilor critice (routing, ACL-uri), diagramelor de flux de acțiune, manualului de contact de urgență. Dacă sistemele cad, documentația digitală poate fi inaccesibilă!"
+  },
+  // ── IA în Rețele — întrebări noi ────────────────────────────────
+  {
+    theme: "IA în Rețele", themeClass: "t6",
+    q: "Care sunt cele 3 aplicații principale ale IA în gestiunea rețelelor menționate în curs?",
+    options: [
+      "Routing, Switching, Firewalling",
+      "Detecția anomaliilor, Predicția congestiei, Gestiunea energetică",
+      "Backup automat, Actualizare firmware, Resetare dispozitive",
+      "Monitorizare SNMP, Analiză NetFlow, Generare rapoarte"
+    ],
+    correct: 1,
+    explanation: "(1) Detecția anomaliilor — învață tipare și detectează comportamente anormale; (2) Predicția congestiei — analizează tendințe istorice, poate rezerva resurse din timp; (3) Gestiunea energetică — oprește resurse subutilizate, optimizează răcirea în centre de date."
+  },
+  {
+    theme: "IA în Rețele", themeClass: "t6",
+    q: "Care este diferența esențială între automatizare și inteligență artificială în contextul rețelelor?",
+    options: [
+      "Automatizarea este mai costisitoare decât IA",
+      "Automatizarea se bazează pe reguli fixe (fără învățare); IA analizează date istorice, învață tipare și face predicții",
+      "IA poate funcționa fără date istorice; automatizarea necesită date",
+      "Nu există diferențe practice între ele"
+    ],
+    correct: 1,
+    explanation: "Automatizare = reguli fixe predefinite (ex: 'dacă RTT > 100ms → alarmă'). Fără învățare. IA = analizează date istorice, detectează tipare, face predicții (ex: 'acest link se congestionează luni la 10:00 cu probabilitate 85%'). IA implică învățare, predicție, inferență."
+  }
+];
+
+let current = 0;
+let score = 0;
+let answered = false;
+let themeScores = {};
+
+// init theme scores
+QUESTIONS.forEach(q => {
+  if (!themeScores[q.theme]) themeScores[q.theme] = { correct: 0, total: 0, cls: q.themeClass };
+  themeScores[q.theme].total++;
+});
+
+function renderQuestion() {
+  const q = QUESTIONS[current];
+  const area = document.getElementById('question-area');
+  const letters = ['A', 'B', 'C', 'D'];
+
+  area.innerHTML = `
+    <div class="question-card">
+      <div class="theme-badge ${q.themeClass}">◆ ${q.theme}</div>
+      <div class="question-text">${q.q}</div>
+      <div class="options" id="opts">
+        ${q.options.map((opt, i) => `
+          <button class="option" id="opt-${i}" onclick="selectAnswer(${i})">
+            <span class="option-letter">${letters[i]}</span>
+            <span>${opt}</span>
+          </button>
+        `).join('')}
+      </div>
+      <div class="feedback" id="feedback"></div>
+    </div>
+  `;
+
+  document.getElementById('q-counter').textContent = current + 1;
+  document.getElementById('prog-bar').style.width = ((current + 1) / QUESTIONS.length * 100) + '%';
+  document.getElementById('btn-next').classList.remove('show');
+  answered = false;
+}
+
+function selectAnswer(idx) {
+  if (answered) return;
+  answered = true;
+
+  const q = QUESTIONS[current];
+  const isCorrect = idx === q.correct;
+  const letters = ['A', 'B', 'C', 'D'];
+  const fb = document.getElementById('feedback');
+
+  // Disable all options
+  for (let i = 0; i < q.options.length; i++) {
+    const btn = document.getElementById('opt-' + i);
+    btn.disabled = true;
+    if (i === q.correct) btn.classList.add('correct');
+    if (i === idx && !isCorrect) btn.classList.add('wrong');
+  }
+
+  if (isCorrect) {
+    score++;
+    themeScores[q.theme].correct++;
+    fb.className = 'feedback correct-fb show';
+    fb.innerHTML = `<strong>✓ Corect!</strong>${q.explanation}`;
+  } else {
+    fb.className = 'feedback wrong-fb show';
+    fb.innerHTML = `<strong>✗ Greșit — Răspuns corect: ${letters[q.correct]}</strong>${q.explanation}`;
+  }
+
+  document.getElementById('score-live').textContent = `✓ ${score} corecte`;
+
+  const btn = document.getElementById('btn-next');
+  btn.textContent = current < QUESTIONS.length - 1 ? 'Următoarea întrebare →' : 'Vezi rezultatele →';
+  btn.classList.add('show');
+}
+
+document.getElementById('btn-next').addEventListener('click', () => {
+  current++;
+  if (current < QUESTIONS.length) {
+    renderQuestion();
+  } else {
+    showResults();
+  }
+});
+
+function showResults() {
+  document.getElementById('quiz-wrapper').classList.add('hide');
+  const sc = document.getElementById('score-screen');
+  sc.classList.add('show');
+
+  document.getElementById('final-score').textContent = score;
+
+  const pct = score / QUESTIONS.length;
+  let title, msg;
+  if (pct >= 0.9) { title = "Excelent! 🏆"; msg = "Cunoști materia foarte bine. Succes la examen!"; }
+  else if (pct >= 0.75) { title = "Foarte bine! 💪"; msg = "Câteva lacune minore, revizuiește capitolele cu greșeli."; }
+  else if (pct >= 0.55) { title = "Bine, dar mai e de lucru 📚"; msg = "Recitește temele unde ai greșit și încearcă din nou."; }
+  else { title = "Mai ai nevoie de studiu 🔍"; msg = "Revizuiește cursul și încearcă din nou. Nu te descuraja!"; }
+
+  document.getElementById('score-title').textContent = title;
+  document.getElementById('score-msg').textContent = `Scor: ${score}/${QUESTIONS.length} (${Math.round(pct*100)}%) — ${msg}`;
+
+  const colors = { t1: '#a78bfa', t2: '#00e5ff', t3: '#f59e0b', t4: '#34d399', t5: '#f87171', t6: '#818cf8' };
+  const grid = document.getElementById('theme-scores-grid');
+  grid.innerHTML = Object.entries(themeScores).map(([name, data]) => {
+    const p = data.total > 0 ? Math.round(data.correct / data.total * 100) : 0;
+    return `
+      <div class="theme-score-item">
+        <div class="ts-label">${name}</div>
+        <div class="ts-val" style="color:${colors[data.cls]}">${data.correct}/${data.total} <small style="font-size:.75rem;color:var(--muted)">(${p}%)</small></div>
+        <div class="ts-bar"><div class="ts-bar-fill" style="width:${p}%;background:${colors[data.cls]}"></div></div>
+      </div>`;
+  }).join('');
+}
+
+function restartQuiz() {
+  current = 0; score = 0; answered = false;
+  Object.keys(themeScores).forEach(k => { themeScores[k].correct = 0; });
+  document.getElementById('score-screen').classList.remove('show');
+  document.getElementById('quiz-wrapper').classList.remove('hide');
+  document.getElementById('score-live').textContent = '✓ 0 corecte';
+  document.getElementById('score-denom').textContent = QUESTIONS.length;
+  renderQuestion();
+}
+
+// Update dynamic counts
+document.getElementById('quiz-subtitle').textContent = QUESTIONS.length + ' întrebări · 6 teme · testează-ți cunoștințele';
+document.getElementById('q-total').textContent = QUESTIONS.length;
+document.getElementById('score-denom').textContent = QUESTIONS.length;
+
+// Start
+renderQuestion();
+</script>
+</body>
+</html>
